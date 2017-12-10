@@ -98,5 +98,16 @@ mutate(insurancetype = factor(insurancetype),
                          "1"="Medicare",       
                          "2"="Private"))
 
+# cindex: 0=normal,1-2=mild,3-4=moderate,>5=severe
+patientdata= patientdata %>%
+mutate( cindex = factor(cindex),
+        cindex = fct_recode(cindex, 
+                         "normal" = "0",
+                         "mild" = "1",
+                         "mild" = "2",
+                         "moderate"= "3",
+                         "moderate"= "4",
+                         "severe"="5"))
+
 ```
 
