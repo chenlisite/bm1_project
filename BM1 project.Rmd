@@ -149,7 +149,7 @@ patientdata = patientdata %>%
 
 ```{r}
 patientdata = patientdata %>% 
-  mutate(log_los = log(loshours))
+  mutate(log_los = log(los_hours))
 hist(patientdata$log_los)
 ```
 
