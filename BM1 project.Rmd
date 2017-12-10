@@ -61,23 +61,61 @@ patientdata = read_excel("GHProject_Dataset.xlsx") %>%
        month = str_sub(month, 1, -4))%>%
   mutate(month= as.numeric(factor(substr(month,2,4), levels = month.abb)))%>%
   arrange(by=patientid,year,month, day)%>%
-  distinct(patientid, .keep_all = TRUE)
+  distinct(patientid, .keep_all = TRUE) %>% 
+  rename(
+    age = ageyear, 
+    marital_status = maritalstatus, 
+    insurance_type = insurancetype,
+    facility = facilityname, 
+    facility_zip = facilityzip,
+    postal_code = postalcode,
+    los_hours = loshours, 
+    los_days = losdays2,
+    o2_sat = o2sat,
+    respiration_rate = respirationrate, 
+    heart_rate = heartrate, 
+    bp_systolic = bpsystolic, 
+    bp_diastolic = bpdiastolic, 
+    patient_id = patientid, 
+    visit_id = visitid) %>% 
+  mutate(
+    los_days = round(los_days, 2),
+    temperature = round(temperature, 2),
+    bmi = round(bmi, 2),
+    respiration_rate = round(respiration_rate, 2),
+    o2_sat = round(o2_sat, 2),
+    heart_rate = round(heart_rate, 2), 
+    bp_systolic = round(bp_systolic, 2), 
+    bp_diastolic = round(bp_diastolic, 2))
+
+patientdata %>% 
+  count(race)
 ```
   
   
-```{r}
+```{r factor recoding}
+# cindex: 0=normal,1-2=mild,3-4=moderate,>5=severe
+patientdata= patientdata %>%
+mutate( cindex = factor(cindex),
+        cindex = fct_recode(cindex, 
+                         "normal" = "0",
+                         "mild" = "1",
+                         "mild" = "2",
+                         "moderate"= "3",
+                         "moderate"= "4",
+                         "severe"="5"))
+
 # gender: 0="Female",1="Male"
 patientdata$gender<-ifelse(patientdata$gender == "Male",1,0)
-# race
-patientdata = patientdata%>%
-mutate(Race = factor(race),
-       Race = fct_recode(race, 
-                         "0" = "White",
-                         "1"="African Amer/Black",       
-                         "2"="Asian",
-                         "3"="Other/Multiracial",
-                         "4"="Native Amer/Alaskan",
-                         "5"="Natv Hawaii/Pacf Isl"))
+
+
+#insurance type: 0="Medicaid", 2 = "Medicare", 3="Private"
+patientdata= patientdata %>%
+mutate(insurancetype = factor(insurancetype),
+       insurancetype = fct_recode(insurancetype, 
+                         "0" = "Medicaid",
+                         "1"="Medicare",       
+                         "2"="Private"))
 
 # marital status: 0="married or living as married", 1="widowed or seperated", 2="unmarried"
 patientdata= patientdata %>%
@@ -90,32 +128,28 @@ mutate( maritalstatus = factor(maritalstatus),
                          "2"= "Single" ,
                          "2"= "Divorced"))
 
-#insurance type: 0="Medicaid", 2 = "Medicare", 3="Private"
-patientdata= patientdata %>%
-mutate(insurancetype = factor(insurancetype),
-       insurancetype = fct_recode(insurancetype, 
-                         "0" = "Medicaid",
-                         "1"="Medicare",       
-                         "2"="Private"))
-
-# cindex: 0=normal,1-2=mild,3-4=moderate,>5=severe
-patientdata= patientdata %>%
-mutate( cindex = factor(cindex),
-        cindex = fct_recode(cindex, 
-                         "normal" = "0",
-                         "mild" = "1",
-                         "mild" = "2",
-                         "moderate"= "3",
-                         "moderate"= "4",
-                         "severe"="5"))
-
-#recode 0-1=normal(0), 2-3=increase caution(1), 4-5=further deterioration(2), >5 immediate action required(3)
+# mews: 0-1=normal(0), 2-3=increase caution(1), 4-5=further deterioration(2), >5 immediate action required(3)
 patientdata=patientdata %>% 
 mutate(mews=ifelse(mews >5,3,ifelse(mews >=4,2, ifelse(mews >=2, 1,0))))
+
+# race
+patientdata = patientdata %>%
+  mutate(race = fct_recode(race, 
+                         "0" = "White",
+                         "1" = "African Amer/Black",       
+                         "2" = "Asian",
+                         "3" = "Other/Multiracial",
+                         "4" = "Native Amer/Alaskan",
+                         "5" = "Natv Hawaii/Pacf Isl"))
+
+
 ```
+
+
 
 ```{r}
 patientdata = patientdata %>% 
   mutate(log_los = log(loshours))
 hist(patientdata$log_los)
 ```
+
