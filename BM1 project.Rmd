@@ -64,4 +64,29 @@ patientdata = read_excel("GHProject_Dataset.xlsx") %>%
 ```
   
   
-  
+```{r}
+# gender: 0="Female",1="Male"
+data_tidy$gender<-ifelse(data_tidy$gender == "Male",1,0)
+# race
+data_tidy=data_tidy %>%
+mutate(Race = factor(Race),
+       Race = fct_recode(Race, 
+                         "0" = "White",
+                         "1"="African Amer/Black",       
+                         "2"="Asian",
+                         "3"="Other/Multiracial",
+                         "4"="Native Amer/Alaskan",
+                         "5"="Natv Hawaii/Pacf Isl"))
+
+# marital status: 0="married or living as married", 1="widowed or seperated", 2="unmarried"
+data_tidy = data_tidy %>%
+mutate( MaritalStatus = factor(MaritalStatus),
+        MaritalStatus = fct_recode(MaritalStatus, 
+                         "0" = "Married",
+                         "0"= "Civil Union",
+                         "1"= "Widowed",
+                         "1" = "Separated",
+                         "2"= "Single" ,
+                         "2"= "Divorced"))
+```
+
