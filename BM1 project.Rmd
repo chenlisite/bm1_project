@@ -114,3 +114,8 @@ patientdata=patientdata %>%
 mutate(mews=ifelse(mews >5,3,ifelse(mews >=4,2, ifelse(mews >=2, 1,0))))
 ```
 
+```{r}
+patientdata = patientdata %>% 
+  mutate(log_los = log(loshours))
+hist(patientdata$log_los)
+```
