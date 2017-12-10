@@ -1,0 +1,15 @@
+---
+title: "BM1 project"
+author: "Chen Li"
+date: "December 10, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r read data}
+patientdata=readxl::read_xlsx("E:/Biostatistics MSPH/8130 Biost Met I/group/GHProject_Dataset.xlsx")
+```
+
