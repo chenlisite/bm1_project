@@ -13,3 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 patientdata=readxl::read_xlsx("E:/Biostatistics MSPH/8130 Biost Met I/group/GHProject_Dataset.xlsx")
 ```
 
+```{r clean dataset}
+dataset = dataset%>%
+  group_by(PatientID)%>%
+  mutate(n = n())%>%
+  mutate( n_rank = rank(-n))%>%
+  filter(n_rank == 1)%>%
+  select(-n,-n_rank)
+```
+  
+  
+  
