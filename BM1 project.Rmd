@@ -5,18 +5,58 @@ date: "December 10, 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r read data}
-patientdata=readxl::read_xlsx("E:/Biostatistics MSPH/8130 Biost Met I/group/GHProject_Dataset.xlsx")
+```{r setup, echo = FALSE, message = FALSE, results = FALSE, warning = FALSE}
+library(ISLR)                          
+library(psych)                         # R data description
+library(boot)                          # For cv.glm()
+library(MPV)                           # For PRESS criterion
+
+library(tidyverse)
+library(tidytext)
+library(broom) #BMI
+library(curl)
+library(data.table)
+library(dplyr)
+library(DT)
+library(faraway)
+library(forcats)
+library(ggplot2)
+library(ggridges)
+library(ggthemes)
+library(haven)
+library(HH) #BMI
+library(htmltools)
+library(janitor)
+library(jtools)
+library(knitr)
+library(knitLatex)
+library(leaps) #BMI
+library(magrittr)
+library(olsrr)
+library(readr)
+library(readxl)
+library(reshape2)
+library(rvest)
+library(stringr)
+library(tools)
+library(viridisLite)
+library(xtable)
+
+#create fxn for full library load
+#watch jg lecture videos for this hw
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%")
 ```
 
 ```{r clean dataset}
-dataset = dataset%>%
-  separate(AdmitDtm, into = c("week", "month","year"), sep = ",")
-  
+patientdata = read_excel("GHProject_Dataset.xlsx") %>% 
+  clean_names() %>% 
+  separate(admitdtm, into = c("day of week", "month","date", "year"))
+
 ```
   
   
