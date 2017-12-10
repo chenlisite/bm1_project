@@ -109,5 +109,8 @@ mutate( cindex = factor(cindex),
                          "moderate"= "4",
                          "severe"="5"))
 
+#recode 0-1=normal(0), 2-3=increase caution(1), 4-5=further deterioration(2), >5 immediate action required(3)
+patientdata=patientdata %>% 
+mutate(mews=ifelse(mews >5,3,ifelse(mews >=4,2, ifelse(mews >=2, 1,0))))
 ```
 
