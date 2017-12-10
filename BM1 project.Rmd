@@ -54,23 +54,24 @@ knitr::opts_chunk$set(
 
 ```{r clean dataset}
 patientdata = read_excel("GHProject_Dataset.xlsx") %>% 
-  separate(AdmitDtm, into = c("week", "month","year"), sep = ",")%>%
+  clean_names()%>%
+  separate(admitdtm, into = c("week", "month","year"), sep = ",")%>%
   mutate(
          day = str_sub(month,-3,-1),
        month = str_sub(month, 1, -4))%>%
   mutate(month= as.numeric(factor(substr(month,2,4), levels = month.abb)))%>%
-  arrange(by=PatientID,year,month, day)%>%
-  distinct(PatientID, .keep_all = TRUE)
+  arrange(by=patientid,year,month, day)%>%
+  distinct(patientid, .keep_all = TRUE)
 ```
   
   
 ```{r}
 # gender: 0="Female",1="Male"
-data_tidy$gender<-ifelse(data_tidy$gender == "Male",1,0)
+patientdata$gender<-ifelse(patientdata$gender == "Male",1,0)
 # race
-data_tidy=data_tidy %>%
-mutate(Race = factor(Race),
-       Race = fct_recode(Race, 
+patientdata = patientdata%>%
+mutate(Race = factor(race),
+       Race = fct_recode(race, 
                          "0" = "White",
                          "1"="African Amer/Black",       
                          "2"="Asian",
@@ -79,14 +80,23 @@ mutate(Race = factor(Race),
                          "5"="Natv Hawaii/Pacf Isl"))
 
 # marital status: 0="married or living as married", 1="widowed or seperated", 2="unmarried"
-data_tidy = data_tidy %>%
-mutate( MaritalStatus = factor(MaritalStatus),
-        MaritalStatus = fct_recode(MaritalStatus, 
+patientdata= patientdata %>%
+mutate( maritalstatus = factor(maritalstatus),
+        maritalstatus = fct_recode(maritalstatus, 
                          "0" = "Married",
                          "0"= "Civil Union",
                          "1"= "Widowed",
                          "1" = "Separated",
                          "2"= "Single" ,
                          "2"= "Divorced"))
+
+#insurance type: 0="Medicaid", 2 = "Medicare", 3="Private"
+patientdata= patientdata %>%
+mutate(insurancetype = factor(insurancetype),
+       insurancetype = fct_recode(insurancetype, 
+                         "0" = "Medicaid",
+                         "1"="Medicare",       
+                         "2"="Private"))
+
 ```
 
