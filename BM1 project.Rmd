@@ -54,9 +54,13 @@ knitr::opts_chunk$set(
 
 ```{r clean dataset}
 patientdata = read_excel("GHProject_Dataset.xlsx") %>% 
-  clean_names() %>% 
-  separate(admitdtm, into = c("day of week", "month","date", "year"))
-
+  separate(AdmitDtm, into = c("week", "month","year"), sep = ",")%>%
+  mutate(
+         day = str_sub(month,-3,-1),
+       month = str_sub(month, 1, -4))%>%
+  mutate(month= as.numeric(factor(substr(month,2,4), levels = month.abb)))%>%
+  arrange(by=PatientID,year,month, day)%>%
+  distinct(PatientID, .keep_all = TRUE)
 ```
   
   
