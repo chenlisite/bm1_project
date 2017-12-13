@@ -7,50 +7,28 @@ output: html_document
 
 
 ```{r setup, echo = FALSE, message = FALSE, results = FALSE, warning = FALSE}
-library(ISLR)                          
-library(psych)                         # R data description
-library(boot)                          # For cv.glm()
-library(MPV)                           # For PRESS criterion
 
-library(tidyverse)
-library(tidytext)
-library(broom) #BMI
-library(curl)
-library(data.table)
-library(dplyr)
-library(DT)
-library(faraway)
-library(forcats)
-library(ggplot2)
-library(ggridges)
-library(ggthemes)
-library(haven)
-library(HH) #BMI
-library(htmltools)
-library(janitor)
-library(jtools)
-library(knitr)
-library(knitLatex)
-library(leaps) #BMI
-library(magrittr)
-library(olsrr)
-library(readr)
-library(readxl)
-library(reshape2)
-library(rvest)
-library(stringr)
-library(tools)
-library(viridisLite)
-library(xtable)
-
-#create fxn for full library load
-#watch jg lecture videos for this hw
 
 knitr::opts_chunk$set(
   fig.width = 6,
   fig.asp = .6,
   out.width = "90%")
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(faraway)
+library(broom)
+library(dplyr)
+library(haven)
+library(rvest)
+library(stringr)
+library(forcats)
+#create fxn for full library load
+#watch jg lecture videos for this hw
+
+
 ```
+
 
 ```{r clean dataset}
 patientdata = read_excel("GHProject_Dataset.xlsx") %>% 
@@ -152,4 +130,31 @@ patientdata = patientdata %>%
   mutate(log_los = log(los_hours))
 hist(patientdata$log_los)
 ```
+
+```{r}
+# interested variables
+data_fit = patientdata %>%
+select(log_los,mews,is30dayreadmit,cindex,evisit,age,race,icu_flag,gender,marital_status,insurance_type,bmi,bp_systolic,o2_sat, temperature,heart_rate,respiration_rate)
+```
+
+```{r}
+# stepwise???
+data_fit=na.omit(data_fit)
+mult.fit <- lm(log_los ~ ., na.action=na.exclude, data=data_fit)
+step(mult.fit, direction='backward')
+```
+
+```{r}
+# MLR - big model
+mult.fit_1 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(gender) + factor(marital_status) + factor(insurance_type) + bp_systolic + o2_sat + heart_rate +  respiration_rate, data=data_fit)
+summary (mult.fit_1)
+anova(mult.fit_1)
+```
+
+```{r}
+mult.fit_2 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(marital_status) + factor(insurance_type) + bp_systolic + heart_rate +  respiration_rate,data=data_fit)
+anova(mult.fit_2,mult.fit_1)
+#choose mult.fit_2
+```
+
 
