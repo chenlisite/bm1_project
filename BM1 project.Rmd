@@ -5,7 +5,6 @@ date: "December 10, 2017"
 output: html_document
 ---
 
-
 ```{r setup, echo = FALSE, message = FALSE, results = FALSE, warning = FALSE}
 
 
@@ -89,16 +88,16 @@ patientdata$gender<-ifelse(patientdata$gender == "Male",1,0)
 
 #insurance type: 0="Medicaid", 2 = "Medicare", 3="Private"
 patientdata= patientdata %>%
-mutate(insurancetype = factor(insurancetype),
-       insurancetype = fct_recode(insurancetype, 
+mutate(insurance_type = factor(insurance_type),
+       insurance_type = fct_recode(insurance_type, 
                          "0" = "Medicaid",
                          "1"="Medicare",       
                          "2"="Private"))
 
 # marital status: 0="married or living as married", 1="widowed or seperated", 2="unmarried"
 patientdata= patientdata %>%
-mutate( maritalstatus = factor(maritalstatus),
-        maritalstatus = fct_recode(maritalstatus, 
+mutate( marital_status = factor(marital_status),
+        marital_status = fct_recode(marital_status, 
                          "0" = "Married",
                          "0"= "Civil Union",
                          "1"= "Widowed",
