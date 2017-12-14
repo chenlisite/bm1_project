@@ -133,10 +133,148 @@ hist(patientdata$log_los)
 ```{r}
 # interested variables
 data_fit = patientdata %>%
-select(log_los,mews,is30dayreadmit,cindex,evisit,age,race,icu_flag,gender,marital_status,insurance_type,bmi,bp_systolic,o2_sat, temperature,heart_rate,respiration_rate)
+dplyr::select(log_los,mews,is30dayreadmit,cindex,evisit,age,race,icu_flag,gender,marital_status,insurance_type,bmi,bp_systolic,o2_sat, temperature,heart_rate,respiration_rate)
 ```
 
 ```{r}
+#stepwise : backward
+mult.fit <- lm(log_los ~ ., data=data_fit)
+summary(mult.fit)
+step1<-update(mult.fit, . ~ . -icu_flag,data=data_fit)
+tidy(step1)
+step2<-update(step1, . ~ . - mews,data=data_fit)
+tidy(step2)
+step3<-update(step2, . ~ . - bmi,data=data_fit)
+tidy(step3)
+step4<-update(step3, . ~ . - race,data=data_fit)
+tidy(step4)
+step5<-update(step4, . ~ . - o2_sat,data=data_fit)
+summary(step5)
+step6<-update(step5, . ~ . - temperature,data=data_fit)
+tidy(step6)
+summary(step6)
+#we choose lm(formula = log_los ~ is30dayreadmit + cindex + evisit + age + gender + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data = data_fit) as our original models, since all p-values are significant in the model.
+```
+
+```{r}
+model = lm(log_los ~ is30dayreadmit + cindex + evisit + age + gender + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_fit)
+summary(model)
+anova(model)
+#From Anova table, we notice that p-value of gender variables are not significant.
+
+model1 = lm(log_los ~ is30dayreadmit + cindex + evisit + age  + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_fit)
+#test correlation between age and insurance_type.
+test_linear = lm(age~insurance_type, data = data_fit)
+summary(test_linear)
+
+model_age = lm(log_los ~ is30dayreadmit + cindex + evisit+ marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_fit)
+summary(model_age)
+
+model_insurance = lm(log_los ~ is30dayreadmit + cindex + evisit + age  + marital_status + bp_systolic + heart_rate + respiration_rate, data=data_fit)
+summary(model_insurance)
+
+AIC(model_age)
+AIC(model_insurance)
+AIC(model1)
+#To compare three models r-square, it's better to drop age variable and choose model--model_insurance. This is just an assumption, we need to test this result in the following steps.
+
+
+```
+
+
+```{r}
+data_base = data_fit%>%
+ dplyr::select(is30dayreadmit,cindex,evisit,age,marital_status,insurance_type,bp_systolic,heart_rate,respiration_rate,log_los)
+
+
+library(dplyr)
+library(HH)
+library("leaps")
+
+# Summary of models for each size (one model per size)
+b<-regsubsets(log_los ~ ., data=data_base,nvmax = 10)
+   (rs<-summary(b))
+
+# Plots of Cp and Adj-R2 as functions of parameters
+
+par(mar=c(4,4,1,1))
+par(mfrow=c(1,2))
+
+plot(1:10, rs$cp, xlab="No of parameters", ylab="Cp Statistic")
+abline(0,1)
+#we should choose model with 9 or 10 parameters.
+#adjusted r2: hign as much as possible: go back to cp plot, then we get six models parameters 
+
+plot(1:10, rs$adjr2, xlab="No of parameters", ylab="Adj R2")
+
+#hign as much as possible: go back to cp plot, then we get 9 or 10 models parameters 
+
+best <- function(model, ...) 
+{
+  subsets <- regsubsets(formula(model), model.frame(model),nvmax = 10,...)
+  subsets <- with(summary(subsets),
+                  cbind(p = as.numeric(rownames(which)), which, rss, rsq, adjr2, cp, bic))##rss(in r) = SSE
+
+  
+  return(subsets)
+}  
+
+# Select the 'best' 2 models of all subsets
+best(model, nbest = 2)
+
+#bic: smallest values 8 predictors
+
+# Select the 'best' 1 model of all subsets
+round(best(model, nbest = 1), 8)
+
+#lowest bic: 8 predicotrs
+#Through testing, we should only choose 8 predictors(9 parameters) and drop martial_status and gender variables in the model1 and the new model 2 is:
+model2 = lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_base)
+summary(model2)
+anova(model2)
+
+# Checking the model assumptions for the model2: 
+par(mfrow=c(2,2))
+plot(model2)
+
+#we throw out
+data_base2 = data_base[-c(3474,1701,1612),]
+  
+```
+
+
+```{r cross validation}
+set.seed(2)
+# For the number generator
+# Split data 50:50 validation and training
+train<-sample(3612, 1806)
+
+# Fit data with training set
+lm.fit<-lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data_base, subset=train)
+summary(lm.fit)
+
+
+#dataset without influential outliers
+set.seed(2)
+train<-sample(3609, 1805)
+lm.fit2<-lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data_base2, subset=train)
+summary(lm.fit2)
+
+#the result changes and adjusted r square increases, thus we drop those three influential observations in this process.
+```
+
+
+
+
+
+
+
+
+
+
+```{r not useful}
+# just need to put these codes in the end of paper
+
 # stepwise???
 data_fit=na.omit(data_fit)
 mult.fit <- lm(log_los ~ ., na.action=na.exclude, data=data_fit)
@@ -154,41 +292,5 @@ anova(mult.fit_1)
 mult.fit_2 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(marital_status) + factor(insurance_type) + bp_systolic + heart_rate +  respiration_rate,data=data_fit)
 anova(mult.fit_2,mult.fit_1)
 #choose mult.fit_2
-```
-
-```{r}
-library(HH)
-library("leaps")
-
-best <- function(model, ...) 
-{
-  subsets <- regsubsets(formula(model), model.frame(model), ...)
-  subsets <- with(summary(subsets),
-                  cbind(p = as.numeric(rownames(which)), which, rss, rsq, adjr2, cp, bic))
-  
-  return(subsets)
-}  
-
-# Select the 'best' 2 models of all subsets
-round(best(mult.fit, nbest = 2), 4)
-
-# Select the 'best' 1 model of all subsets
-round(best(mult.fit, nbest = 1), 4)
-```
-
-```{r}
-
-# Summary of models for each size (one model per size)
-b<-regsubsets(log_los ~ ., data=data_fit)
-((rs<-summary(b))
-
-par(mfrow=c(1,2))
-
-plot(2:9, rs$cp, xlab="No of parameters", ylab="Cp Statistic")
-abline(0,1)
-
-plot(2:9, rs$adjr2, xlab="No of parameters", ylab="Adj R2")
-
-```
 ```
 
