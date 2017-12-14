@@ -294,3 +294,93 @@ anova(mult.fit_2,mult.fit_1)
 #choose mult.fit_2
 ```
 
+####model 2: containing bmi at first(deleted outliers and recoded as underweight, normal and overweight)
+```{r filter}
+patientdata2=patientdata %>% 
+  filter(bmi>15 & bmi<40)
+patientdata2=patientdata2[-c(1253,2111,681),]
+```
+
+```{r recode bmi as categorical}
+# bmi <18.5 underweight >25 overweight
+patientdata2=patientdata2 %>% 
+mutate(bmi=ifelse(bmi <18.5,1,ifelse(bmi <25,0,2)))%>%
+  mutate(bmi=factor(bmi))
+```
+
+```{r backward elimination step1:full model}
+mult.fit1 <- lm(log_los ~ is30dayreadmit+mews+cindex+evisit+icu_flag+age+gender+race+marital_status+insurance_type+bmi+bp_diastolic+temperature+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit1)
+```
+
+```{r step2:-race}
+mult.fit2 <- lm(log_los ~ is30dayreadmit+mews+cindex+evisit+icu_flag+age+gender+marital_status+insurance_type+bmi+bp_diastolic+temperature+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit2)
+```
+
+```{r step3:-temperature}
+mult.fit3 <- lm(log_los ~ is30dayreadmit+mews+cindex+evisit+icu_flag+age+gender+marital_status+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit3)
+```
+
+```{r  step4:-icu_flag}
+mult.fit4 <- lm(log_los ~ is30dayreadmit+mews+cindex+evisit+age+gender+marital_status+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit4)
+```
+
+```{r  step5:-mews}
+mult.fit5 <- lm(log_los ~ is30dayreadmit+cindex+evisit+age+gender+marital_status+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit5)
+```
+
+```{r  step6:-marital_Status}
+mult.fit6 <- lm(log_los ~ is30dayreadmit+cindex+evisit+age+gender+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit6)
+```
+
+```{r anova}
+anova(mult.fit6)
+```
+
+```{r  step7:-gender}
+mult.fit7 <- lm(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit7)
+```
+
+```{r  -cindex}
+mult.fit8 <- lm(log_los ~ is30dayreadmit+evisit+age+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2)
+summary(mult.fit8)
+```
+
+```{r compare nested models with/without cindex}
+anova(mult.fit8, mult.fit7)#keep cindex fit7
+```
+
+```{r residual plots}
+par(mfrow=c(2,2))
+plot(mult.fit7)
+```
+
+```{r cross validation 9}
+set.seed(2)                         
+train<-sample(2712, 1357)
+
+lm.fit<-lm(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, patientdata2, subset=train)
+summary(lm.fit)
+mean((log_los-predict(lm.fit, patientdata2))[-train]^2)
+###bmi levels are insignificant in predicting, try delete them
+```
+
+```{r cross validation -bmi}
+set.seed(2)                         
+train<-sample(2712, 1357)
+
+lm.fit<-lm(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bp_diastolic+heart_rate+respiration_rate, patientdata2, subset=train)
+summary(lm.fit)
+mean((log_los-predict(lm.fit, patientdata2))[-train]^2)
+###here we gain a adjR^2 of 13.7%
+```
+
+
+
+
