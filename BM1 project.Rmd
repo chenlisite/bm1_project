@@ -387,6 +387,18 @@ mean((log_los-predict(lm.fit, patientdata2))[-train]^2)
 ###bmi levels are insignificant in predicting, try delete them
 ```
 
+```{r criterion based procedure}
+cr<-regsubsets(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, data=patientdata2,nvmax=10)
+crsum=summary(cr)
+crsum$cp
+crsum$adjr2
+coef(cr,10)
+par(mfrow=c(1,2))
+plot(2:11, crsum$cp, xlab="No of parameters", ylab="Cp Statistic")
+plot(2:11, crsum$adjr2, xlab="No of parameters", ylab="Adj R2")
+# Based on Cp and adjusted R^2, predictors of is30dayreadmit, cindex, evisit, age, insurance_type, bmi, bp_diastolic, heart_rate, respiration_rate make a good model with Cp of 13.47(considering 2 levels in cindex, p=11) and adjusted R^2 of 0.124
+```
+
 ```{r cross validation -bmi}
 set.seed(2)                         
 train<-sample(2712, 1357)
@@ -394,10 +406,35 @@ train<-sample(2712, 1357)
 lm.fit<-lm(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bp_diastolic+heart_rate+respiration_rate, patientdata2, subset=train)
 summary(lm.fit)
 mean((log_los-predict(lm.fit, patientdata2))[-train]^2)
-###here we gain a adjR^2 of 13.7%
+###here we gain a adjR^2 of 13.7% in predicting using 2 fold cross validation.
+```
+
+```{r press loocv}
+newsummary <- function(model)
+{
+    list('coefs'    = round(t(summary(model)$coef[, 1:2]), 4),
+         'criteria' = cbind('SSE'   = anova(model)["Residuals", "Sum Sq"],
+                            'PRESS' = PRESS(model),
+                            'MSE'   = anova(model)["Residuals", "Mean Sq"],
+                            'Rsq'   = summary(model)$adj.r.squared))
+}
+
+newsummary(lm(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate, patientdata2))
+#The PRESS value(1777.4) is similar to SSE(1756.3), which indicates that the model has a good predictive ability
 ```
 
 
+```{r bootstrap}
+set.seed(1)
+boot.fn<-function(data, index){
+	return(coef(lm(log_los ~ is30dayreadmit+cindex+evisit+age+insurance_type+bmi+bp_diastolic+heart_rate+respiration_rate,data=data,subset=index)))
+}
+# Repeat 10000 times to get the estimates, SEs ad bias
+boot(patientdata2, boot.fn, 10000)
+# How does it compare to the original (non-bootstrap) estimates?
+summary(mult.fit7)
+# The estimators of bootstrapping 10000 are similar to the fitted model, which means the model is calculating the coefficients that represents the underlying sample.
+```
 
 
 
