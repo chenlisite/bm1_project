@@ -237,7 +237,7 @@ anova(model2)
 par(mfrow=c(2,2))
 plot(model2)
 
-#we throw out
+#we throw out influtential values and creat a new data called data_based2
 data_base2 = data_base[-c(3474,1701,1612),]
   
 ```
@@ -263,36 +263,52 @@ summary(lm.fit2)
 #the result changes and adjusted r square increases, thus we drop those three influential observations in this process.
 ```
 
+```{r bootstrap}
+library(boot)    
+set.seed(1)
+
+# Our usual regression, no bootstrap yet
+boot.fn<-function(data, index){
+	return(coef(lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data = data,subset=index)))
+}
+
+boot.fn(data_base2,1:3609)# only run one time
+
+boot(data_base2, boot.fn, 10000)
+
+#Bootstrap Statistics :(t represents coefficient of predictors)
+#         original        bias     std. error
+#t1*   3.718206963 -1.784266e-02 0.2242653905
+#t2*   0.183658219 -5.811184e-04 0.0417042445
+#t3*   0.033134754  4.460544e-04 0.0340913015
+#t4*   0.147556691  3.194833e-04 0.0513593396
+#t5*   0.216616935 -2.477349e-05 0.0423348962
+#t6*   0.067319282  9.915623e-05 0.0090200302
+#t7*   0.009981336  3.400961e-06 0.0009413854
+#t8*  -0.155042274  1.845899e-03 0.0781969271
+#t9*  -0.245955359  1.792240e-03 0.0754282738
+#t10* -0.006351560  2.505640e-06 0.0009344650
+#t11*  0.006625410  2.682582e-05 0.0013541993
+#t12*  0.022554663  7.273797e-04 0.0077049472
 
 
+#By compared with coefficients with summary(), we can see the estimated coefficients fall into confident interval.
 
-
-
-
-
-
-
-```{r not useful}
-# just need to put these codes in the end of paper
-
-# stepwise???
-data_fit=na.omit(data_fit)
-mult.fit <- lm(log_los ~ ., na.action=na.exclude, data=data_fit)
-step(mult.fit, direction='backward')
 ```
 
-```{r}
-# MLR - big model
-mult.fit_1 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(gender) + factor(marital_status) + factor(insurance_type) + bp_systolic + o2_sat + heart_rate +  respiration_rate, data=data_fit)
-summary (mult.fit_1)
-anova(mult.fit_1)
-```
+log_los  =  4.049 + 0.150 is30dayreadmit - 0.001 cindexmild + 0.256 cindexmoderate+                            0.267 cindexsevere + 0.067evisit +  0.009 age -0.021 insurance_type1 -
+            0.119insurance_type2 - 0.007 bp_systolic + 0.004heart_rate +  0.013respiration_rate
 
-```{r}
-mult.fit_2 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(marital_status) + factor(insurance_type) + bp_systolic + heart_rate +  respiration_rate,data=data_fit)
-anova(mult.fit_2,mult.fit_1)
-#choose mult.fit_2
-```
+
+
+
+ 
+
+
+
+
+
+
 
 ####model 2: containing bmi at first(deleted outliers and recoded as underweight, normal and overweight)
 ```{r filter}
@@ -383,4 +399,36 @@ mean((log_los-predict(lm.fit, patientdata2))[-train]^2)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+```{r not useful}
+# just need to put these codes in the end of paper
+
+# stepwise???
+data_fit=na.omit(data_fit)
+mult.fit <- lm(log_los ~ ., na.action=na.exclude, data=data_fit)
+step(mult.fit, direction='backward')
+```
+
+```{r}
+# MLR - big model
+mult.fit_1 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(gender) + factor(marital_status) + factor(insurance_type) + bp_systolic + o2_sat + heart_rate +  respiration_rate, data=data_fit)
+summary (mult.fit_1)
+anova(mult.fit_1)
+```
+
+```{r}
+mult.fit_2 <- lm(log_los ~ factor(is30dayreadmit) + factor(cindex) + evisit + age + factor(marital_status) + factor(insurance_type) + bp_systolic + heart_rate +  respiration_rate,data=data_fit)
+anova(mult.fit_2,mult.fit_1)
+#choose mult.fit_2
+```
 
