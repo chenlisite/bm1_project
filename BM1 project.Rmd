@@ -123,21 +123,23 @@ patientdata = patientdata %>%
 ```
 
 
-
 ```{r}
+#  log transformation on outcome - los_hours
 patientdata = patientdata %>% 
   mutate(log_los = log(los_hours))
 hist(patientdata$log_los)
 ```
 
 ```{r}
-# interested variables
+# select interested variables
 data_fit = patientdata %>%
 dplyr::select(log_los,mews,is30dayreadmit,cindex,evisit,age,race,icu_flag,gender,marital_status,insurance_type,bmi,bp_systolic,o2_sat, temperature,heart_rate,respiration_rate)
 ```
 
+## First Model(without bmi)
+### Use automatic procedures to choose predictors
 ```{r}
-#stepwise : backward
+#stepwise(backward)
 mult.fit <- lm(log_los ~ ., data=data_fit)
 summary(mult.fit)
 step1<-update(mult.fit, . ~ . -icu_flag,data=data_fit)
@@ -153,19 +155,25 @@ summary(step5)
 step6<-update(step5, . ~ . - temperature,data=data_fit)
 tidy(step6)
 summary(step6)
-#we choose lm(formula = log_los ~ is30dayreadmit + cindex + evisit + age + gender + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data = data_fit) as our original models, since all p-values are significant in the model.
+# we choose lm(formula = log_los ~ is30dayreadmit + cindex + evisit + age + gender + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data = data_fit) as our original models, since all p-values are significant in this model.
 ```
 
+Use ANOVA to test the significance of selected predictors
 ```{r}
 model = lm(log_los ~ is30dayreadmit + cindex + evisit + age + gender + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_fit)
 summary(model)
 anova(model)
-#From Anova table, we notice that p-value of gender variables are not significant.
-
+# remove gender as its p-value is not significant
+# we get model1
 model1 = lm(log_los ~ is30dayreadmit + cindex + evisit + age  + marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_fit)
-#test correlation between age and insurance_type.
+
+```
+
+Test correlation between age and insurance_type.
+```{r}
 test_linear = lm(age~insurance_type, data = data_fit)
 summary(test_linear)
+# age and insurance type are high-correlated
 
 model_age = lm(log_los ~ is30dayreadmit + cindex + evisit+ marital_status + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_fit)
 summary(model_age)
@@ -176,16 +184,13 @@ summary(model_insurance)
 AIC(model_age)
 AIC(model_insurance)
 AIC(model1)
-#To compare three models r-square, it's better to drop age variable and choose model--model_insurance. This is just an assumption, we need to test this result in the following steps.
-
-
+#To compare r-square value, it's better to drop insurance_type variable and choose model_insurance. This is just an assumption, we need to test this result in the following steps.
 ```
 
-
+### Use criterion procedures to choose predictors
 ```{r}
-data_base = data_fit%>%
+data_base = data_fit %>%
  dplyr::select(is30dayreadmit,cindex,evisit,age,marital_status,insurance_type,bp_systolic,heart_rate,respiration_rate,log_los)
-
 
 library(dplyr)
 library(HH)
@@ -201,14 +206,12 @@ par(mar=c(4,4,1,1))
 par(mfrow=c(1,2))
 
 plot(1:10, rs$cp, xlab="No of parameters", ylab="Cp Statistic")
-abline(0,1)
-#we should choose model with 9 or 10 parameters.
-#adjusted r2: hign as much as possible: go back to cp plot, then we get six models parameters 
-
 plot(1:10, rs$adjr2, xlab="No of parameters", ylab="Adj R2")
+#we should choose model with 9 or 10 parameters.
+```
 
-#hign as much as possible: go back to cp plot, then we get 9 or 10 models parameters 
-
+# Final procedures to determine the best predictors in our model
+```{r}
 best <- function(model, ...) 
 {
   subsets <- regsubsets(formula(model), model.frame(model),nvmax = 10,...)
@@ -219,16 +222,12 @@ best <- function(model, ...)
   return(subsets)
 }  
 
-# Select the 'best' 2 models of all subsets
-best(model, nbest = 2)
-
-#bic: smallest values 8 predictors
 
 # Select the 'best' 1 model of all subsets
 round(best(model, nbest = 1), 8)
 
-#lowest bic: 8 predicotrs
-#Through testing, we should only choose 8 predictors(9 parameters) and drop martial_status and gender variables in the model1 and the new model 2 is:
+# Choose 8 predicotrs(9 parameters) as it has lowest bic value
+# drop martial_status and gender variables in the model1, we get new model2
 model2 = lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data=data_base)
 summary(model2)
 anova(model2)
@@ -237,17 +236,17 @@ anova(model2)
 par(mfrow=c(2,2))
 plot(model2)
 
-#we throw out influtential values and creat a new data called data_based2
+# drop out influtential values and creat a new data called data_based2
 data_base2 = data_base[-c(3474,1701,1612),]
   
 ```
 
-
+### Data validation
+Cross validation
 ```{r cross validation}
+#dataset with influential outliers
 set.seed(2)
-# For the number generator
-# Split data 50:50 validation and training
-train<-sample(3612, 1806)
+train<-sample(3612, 1806) # Split data 50:50 validation and training
 
 # Fit data with training set
 lm.fit<-lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data_base, subset=train)
@@ -256,13 +255,17 @@ summary(lm.fit)
 
 #dataset without influential outliers
 set.seed(2)
-train<-sample(3609, 1805)
+train<-sample(3609, 1805)  # Split data 50:50 validation and training
 lm.fit2<-lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data_base2, subset=train)
 summary(lm.fit2)
 
-#the result changes and adjusted r square increases, thus we drop those three influential observations in this process.
+# the estimate for cindex and insurance change greatly in magnitude and adjusted r square increases when outliers were removed, thus we drop those three influential observations.
+# we get final model
+final_model = lm(log_los ~ is30dayreadmit + cindex + evisit + age  + insurance_type + bp_systolic + heart_rate + respiration_rate, data = data_base2)
+summary(final_model)
 ```
 
+Bootstrap for final model
 ```{r bootstrap}
 library(boot)    
 set.seed(1)
@@ -292,12 +295,11 @@ boot(data_base2, boot.fn, 10000)
 #t12*  0.022554663  7.273797e-04 0.0077049472
 
 
-#By compared with coefficients with summary(), we can see the estimated coefficients fall into confident interval.
+# By compared with coefficients with summary(), we can see the estimated coefficients are almost same to the final model, indicating good prediction of our model.
 
 ```
-
-log_los  =  4.049 + 0.150 is30dayreadmit - 0.001 cindexmild + 0.256 cindexmoderate+                            0.267 cindexsevere + 0.067evisit +  0.009 age -0.021 insurance_type1 -
-            0.119insurance_type2 - 0.007 bp_systolic + 0.004heart_rate +  0.013respiration_rate
+Therefore, our final model is as following:
+log_los  =  3.718 + 0.184 is30dayreadmit - 0.033 cindexmild + 0.148 cindexmoderate+ 0.217 cindexsevere + 0.067evisit +  0.010 age -0.155 insurance_type1 -0.246insurance_type2 - 0.006 bp_systolic + 0.007heart_rate +  0.023respiration_rate
 
 
 

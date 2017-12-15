@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1513306087199.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "F862E7CF",
+    "lastKnownWriteTime" : 4556802640,
+    "last_content_update" : 1513306087199,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "810F818",
+        "caption" : "patientdata",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=patientdata&cache_key=810F818",
+        "displayedObservations" : 3612,
+        "environment" : "",
+        "object" : "patientdata",
+        "preview" : 0,
+        "totalObservations" : 3612,
+        "variables" : 29
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
